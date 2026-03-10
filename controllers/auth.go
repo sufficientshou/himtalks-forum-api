@@ -21,13 +21,10 @@ var (
 )
 
 func init() {
-	// Load .env
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatalf("Error loading .env file: %v", err)
-	}
+	// Load .env (opsional - di Docker env dari container)
+	_ = godotenv.Load()
 
-	// Setelah .env termuat, inisialisasi googleOAuthConfig
+	// Inisialisasi googleOAuthConfig
 	googleOAuthConfig = &oauth2.Config{
 		ClientID:     os.Getenv("GOOGLE_CLIENT_ID"),
 		ClientSecret: os.Getenv("GOOGLE_CLIENT_SECRET"),

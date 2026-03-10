@@ -1,0 +1,17 @@
+git/
+node_modules/
+admin_ui/node_modules/
+admin_ui/dist/
+admin_ui/build/
+.env
+.env.local
+.env.*.local
+.git
+.gitignore
+*.md
+*.log
+test_*.sh
+test_*.ps1
+.DS_Store
+__pycache__/
+*.pyc

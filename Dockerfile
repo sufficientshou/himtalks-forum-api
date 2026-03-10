@@ -1,30 +1,34 @@
-# Gunakan image golang sebagai base image
-FROM golang:1.20-alpine
+# Build stage
+FROM golang:1.20-alpine AS builder
 
-# Set environment variables
-ENV GO111MODULE=on
-ENV GOPROXY=https://proxy.golang.org,direct
+ENV GO111MODULE=on \
+    GOPROXY=https://proxy.golang.org,direct \
+    CGO_ENABLED=0 \
+    GOOS=linux
 
-# Install dependencies
 RUN apk add --no-cache git
 
-# Buat direktori kerja
 WORKDIR /app
 
-# Copy go.mod dan go.sum
 COPY go.mod go.sum ./
-
-# Download dependencies
 RUN go mod download
 
-# Copy seluruh kode ke dalam container
 COPY . .
 
-# Build aplikasi
-RUN go build -o main .
+RUN go build -ldflags="-w -s" -o main .
 
-# Expose port yang digunakan aplikasi
+# Runtime stage
+FROM alpine:3.18
+
+RUN apk add --no-cache ca-certificates postgresql-client
+
+WORKDIR /app
+
+COPY --from=builder /app/main .
+
 EXPOSE 8080
 
-# Jalankan aplikasi
+HEALTHCHECK --interval=10s --timeout=5s --retries=3 \
+    CMD wget --quiet --tries=1 --spider http://localhost:8080/health || exit 1
+
 CMD ["./main"]

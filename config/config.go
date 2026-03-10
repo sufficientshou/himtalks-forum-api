@@ -10,11 +10,10 @@ import (
 	_ "github.com/lib/pq" // Import driver PostgreSQL
 )
 
-// LoadEnv memuat variabel lingkungan dari file .env
+// LoadEnv memuat variabel lingkungan dari file .env (opsional di Docker)
 func LoadEnv() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
+	if err := godotenv.Load(); err != nil {
+		log.Println("No .env file, using environment variables")
 	}
 }
 

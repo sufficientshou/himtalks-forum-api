@@ -17,10 +17,9 @@ import (
 
 func main() {
 
-	// Load .env file
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
+	// Load .env file (opsional - di Docker env vars dari container)
+	if err := godotenv.Load(); err != nil {
+		log.Println("No .env file found, using environment variables")
 	}
 
 	// Akses environment variables
@@ -98,7 +97,7 @@ func main() {
 
 	// Middleware untuk menonaktifkan CORS
 	corsHandler := handlers.CORS(
-		handlers.AllowedOrigins([]string{"http://himtalks.japaneast.cloudapp.azure.com", "https://himtalks.vercel.app", "https://himtalks-admin.vercel.app"}), // Ganti * dengan domain FE
+		handlers.AllowedOrigins([]string{"http://localhost:3000", "http://localhost:5173", "http://himtalks.japaneast.cloudapp.azure.com", "https://himtalks.vercel.app", "https://himtalks-admin.vercel.app"}), // Ganti * dengan domain FE
 		handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}),
 		handlers.AllowedHeaders([]string{"Content-Type", "Authorization"}),
 		handlers.AllowCredentials(), // Mengaktifkan penggunaan credentials (cookies/session)
