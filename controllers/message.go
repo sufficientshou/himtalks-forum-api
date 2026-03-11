@@ -84,7 +84,7 @@ func (mc *MessageController) GetMessageList(w http.ResponseWriter, r *http.Reque
 	}
 	defer rows.Close()
 
-	var messageList []models.Message
+	messageList := []models.Message{}
 	for rows.Next() {
 		var message models.Message
 		err := rows.Scan(

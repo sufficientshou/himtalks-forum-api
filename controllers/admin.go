@@ -78,7 +78,7 @@ func (ah *AdminHandler) GetAdminList(w http.ResponseWriter, r *http.Request) {
 	}
 	defer rows.Close()
 
-	var adminList []string
+	adminList := []string{}
 	for rows.Next() {
 		var email string
 		err := rows.Scan(&email)

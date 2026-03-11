@@ -69,9 +69,17 @@ func main() {
 	if err != nil {
 		log.Fatal("Failed to create blacklist table:", err)
 	}
+	err = models.CreateTableForums(db)
+	if err != nil {
+		log.Fatal("Failed to create forums table:", err)
+	}
+	err = models.CreateTableComments(db)
+	if err != nil {
+		log.Fatal("Failed to create comments table:", err)
+	}
 
 	// Hardcode admin pertama (ganti dengan email yang lu mau)
-	hardcodedAdmin := "2310631170103@student.unsika.ac.id"
+	hardcodedAdmin := "2510631170035@student.unsika.ac.id"
 	
 	// Cek apakah admin sudah ada
 	isAdmin, err := models.IsAdmin(db, hardcodedAdmin)

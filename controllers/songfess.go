@@ -90,7 +90,7 @@ func (sc *SongfessController) GetSongfessList(w http.ResponseWriter, r *http.Req
 	}
 	defer rows.Close()
 
-	var songfessList []models.Songfess
+	songfessList := []models.Songfess{}
 	for rows.Next() {
 		var songfess models.Songfess
 		err := rows.Scan(
@@ -145,7 +145,7 @@ func (sc *SongfessController) GetSongfessListWithCutoff(w http.ResponseWriter, r
 	}
 	defer rows.Close()
 
-	var songfessList []models.Songfess
+	songfessList := []models.Songfess{}
 	for rows.Next() {
 		var songfess models.Songfess
 		err := rows.Scan(
