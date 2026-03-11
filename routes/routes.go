@@ -59,6 +59,14 @@ func SetupRoutes(db *sql.DB) *mux.Router {
 	r.HandleFunc("/api/spotify/search", spotifyController.SearchTracks).Methods("GET")
 	r.HandleFunc("/api/spotify/track", spotifyController.GetTrack).Methods("GET")
 
+	// Forum (publik)
+	forumController := &controllers.ForumController{DB: db}
+	commentController := &controllers.CommentController{DB: db}
+	r.HandleFunc("/forums", forumController.GetForumList).Methods("GET")
+	r.HandleFunc("/forums/{id:[0-9]+}", forumController.GetForumByID).Methods("GET")
+	r.HandleFunc("/forums/{id:[0-9]+}/comments", commentController.GetCommentsByForum).Methods("GET")
+	r.HandleFunc("/forums/{id:[0-9]+}/comments", commentController.CreateComment).Methods("POST")
+
 	// Tambahan route admin
 	admin := protected.PathPrefix("/admin").Subrouter()
 	adminHandler := &controllers.AdminHandler{DB: db}
@@ -81,6 +89,8 @@ func SetupRoutes(db *sql.DB) *mux.Router {
 	admin.HandleFunc("/messages", messageController.GetMessageList).Methods("GET")
 	admin.HandleFunc("/message/delete", messageController.DeleteMessage).Methods("POST")
 	admin.HandleFunc("/songfess/delete", songfessController.DeleteSongfess).Methods("POST")
+	// Forum (admin only)
+	admin.HandleFunc("/forums", forumController.CreateForum).Methods("POST")
 
 	return r
 }
