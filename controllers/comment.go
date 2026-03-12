@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"himtalks-backend/models"
+	"himtalks-backend/utils"
 
 	"github.com/gorilla/mux"
 )
@@ -19,6 +20,15 @@ type CommentController struct {
 
 // CreateComment membuat komentar untuk forum (publik, user/anonym)
 func (cc *CommentController) CreateComment(w http.ResponseWriter, r *http.Request) {
+	if !utils.IsMiniForumOpen() {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(map[string]string{
+			"message": "Mini forum hanya menerima komentar antara pukul 19:00–21:00 WIB",
+		})
+		return
+	}
+
 	vars := mux.Vars(r)
 	forumIDStr := vars["id"]
 	forumID, err := strconv.Atoi(forumIDStr)

@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"himtalks-backend/models"
+	"himtalks-backend/utils"
 
 	"github.com/gorilla/mux"
 )
@@ -18,6 +19,15 @@ type ForumController struct {
 
 // CreateForum membuat postingan forum (admin only via route middleware)
 func (fc *ForumController) CreateForum(w http.ResponseWriter, r *http.Request) {
+	if !utils.IsMiniForumOpen() {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(map[string]string{
+			"message": "Mini forum hanya bisa dibuat antara pukul 19:00–21:00 WIB",
+		})
+		return
+	}
+
 	var forum models.Forum
 	if err := json.NewDecoder(r.Body).Decode(&forum); err != nil {
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
