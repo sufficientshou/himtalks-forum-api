@@ -3,17 +3,17 @@ package utils
 import "time"
 
 // IsMiniForumOpen mengembalikan true jika waktu saat ini berada di antara 19:00–21:00 WIB.
+// Menggunakan offset manual UTC+7 supaya tidak tergantung tzdata di dalam container.
 func IsMiniForumOpen() bool {
-	loc, err := time.LoadLocation("Asia/Jakarta")
-	if err != nil {
-		loc = time.Local
-	}
+	// Ambil waktu UTC lalu geser ke WIB (UTC+7)
+	nowUTC := time.Now().UTC()
+	nowWIB := nowUTC.Add(7 * time.Hour)
 
-	now := time.Now().In(loc)
+	start := time.Date(nowWIB.Year(), nowWIB.Month(), nowWIB.Day(), 19, 0, 0, 0, time.UTC)
+	end := time.Date(nowWIB.Year(), nowWIB.Month(), nowWIB.Day(), 21, 0, 0, 0, time.UTC)
 
-	start := time.Date(now.Year(), now.Month(), now.Day(), 19, 0, 0, 0, loc)
-	end := time.Date(now.Year(), now.Month(), now.Day(), 21, 0, 0, 0, loc)
-
-	return now.After(start) && now.Before(end)
+	// Bandingkan dalam "ruang" WIB yang sudah digeser
+	return nowWIB.After(start) && nowWIB.Before(end)
 }
+
 
