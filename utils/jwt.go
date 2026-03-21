@@ -9,7 +9,14 @@ import (
 	"github.com/golang-jwt/jwt/v4" // Ubah import path
 )
 
-var jwtKey = []byte(os.Getenv("SECRET_KEY")) // Ambil secret key dari .env
+var jwtKey []byte
+
+func getJWTKey() []byte {
+	if len(jwtKey) == 0 {
+		jwtKey = []byte(os.Getenv("SECRET_KEY"))
+	}
+	return jwtKey
+}
 
 type Claims struct {
 	Email                string `json:"email"`
@@ -27,7 +34,7 @@ func GenerateToken(email string) (string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(jwtKey)
+	return token.SignedString(getJWTKey())
 }
 
 // ValidateToken memvalidasi token JWT
@@ -38,7 +45,7 @@ func ValidateToken(tokenString string) (*Claims, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
-		return jwtKey, nil
+		return getJWTKey(), nil
 	})
 
 	if err != nil {
