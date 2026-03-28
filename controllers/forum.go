@@ -7,9 +7,11 @@ import (
 	"net/http"
 	"strings"
 
+	"himtalks-backend/config"
 	"himtalks-backend/models"
 	"himtalks-backend/utils"
 
+	"github.com/cloudinary/cloudinary-go/v2/api/uploader"
 	"github.com/gorilla/mux"
 )
 
@@ -28,15 +30,16 @@ func (fc *ForumController) CreateForum(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var forum models.Forum
-	if err := json.NewDecoder(r.Body).Decode(&forum); err != nil {
-		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+	// Parse multipart form dengan batas max 2MB di memory
+	err := r.ParseMultipartForm(2 << 20) // 2MB
+	if err != nil {
+		http.Error(w, "File size is too large or invalid multipart form", http.StatusBadRequest)
 		return
 	}
 
-	forum.Title = strings.TrimSpace(forum.Title)
-	forum.Content = strings.TrimSpace(forum.Content)
-	forum.ImageURL = strings.TrimSpace(forum.ImageURL)
+	var forum models.Forum
+	forum.Title = strings.TrimSpace(r.FormValue("title"))
+	forum.Content = strings.TrimSpace(r.FormValue("content"))
 
 	if forum.Title == "" {
 		http.Error(w, "Title is required", http.StatusBadRequest)
@@ -47,10 +50,47 @@ func (fc *ForumController) CreateForum(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Proses upload gambar (opsional)
+	file, header, err := r.FormFile("image")
+	if err == nil {
+		defer file.Close()
+
+		// Validasi ukuran file (maks 2MB)
+		if header.Size > 2<<20 {
+			http.Error(w, "Ukuran gambar maksimal 2MB", http.StatusBadRequest)
+			return
+		}
+
+		// Validasi ekstensi/tipe konten
+		ext := strings.ToLower(header.Filename)
+		if !strings.HasSuffix(ext, ".jpg") && !strings.HasSuffix(ext, ".jpeg") && !strings.HasSuffix(ext, ".png") {
+			http.Error(w, "Gambar harus berformat jpg/png", http.StatusBadRequest)
+			return
+		}
+
+		// Upload ke Cloudinary jika client sudah diinisialisasi
+		if config.CloudinaryClient != nil {
+			uploadParam, errUpload := config.CloudinaryClient.Upload.Upload(r.Context(), file, uploader.UploadParams{
+				Folder: "forums",
+			})
+			if errUpload != nil {
+				log.Printf("Error upload ke Cloudinary: %v", errUpload)
+				http.Error(w, "Failed to upload image", http.StatusInternalServerError)
+				return
+			}
+			forum.ImageURL = uploadParam.SecureURL
+		} else {
+			log.Println("Cloudinary Client is not initialized, skipping upload")
+		}
+	} else if err != http.ErrMissingFile {
+		http.Error(w, "Error saat membaca file", http.StatusBadRequest)
+		return
+	}
+
 	query := `INSERT INTO forums (title, content, image_url)
 	          VALUES ($1, $2, NULLIF($3, ''))
 	          RETURNING id, created_at`
-	err := fc.DB.QueryRow(query, forum.Title, forum.Content, forum.ImageURL).Scan(&forum.ID, &forum.CreatedAt)
+	err = fc.DB.QueryRow(query, forum.Title, forum.Content, forum.ImageURL).Scan(&forum.ID, &forum.CreatedAt)
 	if err != nil {
 		log.Printf("Error inserting forum: %v", err)
 		http.Error(w, "Failed to create forum", http.StatusInternalServerError)

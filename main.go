@@ -41,6 +41,9 @@ func main() {
 	// Load environment variables
 	config.LoadEnv()
 
+	// Inisialisasi Cloudinary
+	config.InitCloudinary()
+
 	// Connect to PostgreSQL
 	db, err := config.ConnectDB()
 	if err != nil {

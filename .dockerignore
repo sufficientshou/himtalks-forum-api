@@ -8,6 +8,7 @@ admin_ui/build/
 .env.*.local
 .git
 .gitignore
+gen_token.go
 *.md
 *.log
 test_*.sh
