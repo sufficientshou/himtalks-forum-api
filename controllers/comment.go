@@ -66,10 +66,10 @@ func (cc *CommentController) CreateComment(w http.ResponseWriter, r *http.Reques
 	}
 
 	comment.ForumID = forumID
-	query := `INSERT INTO comments (forum_id, name, content)
-	          VALUES ($1, $2, $3)
+	query := `INSERT INTO comments (forum_id, name, content, avatar_id)
+	          VALUES ($1, $2, $3, NULLIF($4, ''))
 	          RETURNING id, created_at`
-	err = cc.DB.QueryRow(query, comment.ForumID, comment.Name, comment.Content).Scan(&comment.ID, &comment.CreatedAt)
+	err = cc.DB.QueryRow(query, comment.ForumID, comment.Name, comment.Content, comment.AvatarID).Scan(&comment.ID, &comment.CreatedAt)
 	if err != nil {
 		log.Printf("Error inserting comment: %v", err)
 		http.Error(w, "Failed to create comment", http.StatusInternalServerError)
@@ -94,6 +94,7 @@ func (cc *CommentController) GetCommentsByForum(w http.ResponseWriter, r *http.R
 	rows, err := cc.DB.Query(`
 		SELECT id, forum_id,
 		       COALESCE(name, '') as name,
+		       COALESCE(avatar_id, '') as avatar_id,
 		       content,
 		       created_at
 		FROM comments
@@ -109,7 +110,7 @@ func (cc *CommentController) GetCommentsByForum(w http.ResponseWriter, r *http.R
 	comments := []models.Comment{}
 	for rows.Next() {
 		var c models.Comment
-		if err := rows.Scan(&c.ID, &c.ForumID, &c.Name, &c.Content, &c.CreatedAt); err != nil {
+		if err := rows.Scan(&c.ID, &c.ForumID, &c.Name, &c.AvatarID, &c.Content, &c.CreatedAt); err != nil {
 			log.Printf("Error scanning comment row: %v", err)
 			http.Error(w, "Failed to scan comment", http.StatusInternalServerError)
 			return

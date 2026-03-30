@@ -9,6 +9,7 @@ type Comment struct {
 	ID        int       `json:"id"`
 	ForumID   int       `json:"forum_id"`
 	Name      string    `json:"name"`
+	AvatarID  string    `json:"avatar_id"`
 	Content   string    `json:"content"`
 	CreatedAt time.Time `json:"created_at"`
 }
@@ -20,6 +21,7 @@ func CreateTableComments(db *sql.DB) error {
 		id SERIAL PRIMARY KEY,
 		forum_id INTEGER NOT NULL REFERENCES forums(id) ON DELETE CASCADE,
 		name VARCHAR(50),
+		avatar_id VARCHAR(50),
 		content TEXT NOT NULL,
 		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 	);
