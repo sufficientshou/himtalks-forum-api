@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"himtalks-backend/models"
 	"himtalks-backend/utils"
@@ -53,15 +54,25 @@ func (cc *CommentController) CreateComment(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	// Pastikan forum ada (biar error-nya 404, bukan generic FK violation)
-	var exists bool
-	if err := cc.DB.QueryRow("SELECT EXISTS(SELECT 1 FROM forums WHERE id=$1)", forumID).Scan(&exists); err != nil {
-		log.Printf("Error checking forum existence: %v", err)
+	// Pastikan forum ada dan cek apakah masih bisa dikomentari (max 7 hari)
+	var forumCreatedAt time.Time
+	if err := cc.DB.QueryRow("SELECT created_at FROM forums WHERE id=$1", forumID).Scan(&forumCreatedAt); err != nil {
+		if err == sql.ErrNoRows {
+			http.Error(w, "Forum not found", http.StatusNotFound)
+			return
+		}
+		log.Printf("Error checking forum: %v", err)
 		http.Error(w, "Failed to verify forum", http.StatusInternalServerError)
 		return
 	}
-	if !exists {
-		http.Error(w, "Forum not found", http.StatusNotFound)
+
+	// Cek apakah forum sudah lewat 7 hari
+	if time.Since(forumCreatedAt) > 7*24*time.Hour {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(map[string]string{
+			"message": "Forum ini sudah tidak menerima komentar baru (lewat 7 hari)",
+		})
 		return
 	}
 

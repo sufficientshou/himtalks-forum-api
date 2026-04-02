@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	"himtalks-backend/config"
 	"himtalks-backend/models"
@@ -97,6 +98,8 @@ func (fc *ForumController) CreateForum(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	forum.IsCommentable = true
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(forum)
@@ -125,6 +128,7 @@ func (fc *ForumController) GetForumList(w http.ResponseWriter, r *http.Request) 
 			http.Error(w, "Failed to scan forum", http.StatusInternalServerError)
 			return
 		}
+		forum.IsCommentable = time.Since(forum.CreatedAt) <= 7*24*time.Hour
 		forums = append(forums, forum)
 	}
 	if err := rows.Err(); err != nil {
@@ -158,6 +162,8 @@ func (fc *ForumController) GetForumByID(w http.ResponseWriter, r *http.Request) 
 		http.Error(w, "Failed to fetch forum", http.StatusInternalServerError)
 		return
 	}
+
+	forum.IsCommentable = time.Since(forum.CreatedAt) <= 7*24*time.Hour
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(forum)
