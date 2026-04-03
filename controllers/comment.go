@@ -138,3 +138,33 @@ func (cc *CommentController) GetCommentsByForum(w http.ResponseWriter, r *http.R
 	json.NewEncoder(w).Encode(comments)
 }
 
+// DeleteComment menghapus komentar berdasarkan ID (admin only)
+func (cc *CommentController) DeleteComment(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	var exists bool
+	err := cc.DB.QueryRow("SELECT EXISTS(SELECT 1 FROM comments WHERE id=$1)", id).Scan(&exists)
+	if err != nil {
+		log.Printf("Error checking comment: %v", err)
+		http.Error(w, "Failed to check comment", http.StatusInternalServerError)
+		return
+	}
+	if !exists {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(map[string]string{"message": "Comment not found"})
+		return
+	}
+
+	_, err = cc.DB.Exec("DELETE FROM comments WHERE id = $1", id)
+	if err != nil {
+		log.Printf("Error deleting comment: %v", err)
+		http.Error(w, "Failed to delete comment", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"message": "Comment deleted successfully"})
+}
+

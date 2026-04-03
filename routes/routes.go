@@ -91,6 +91,9 @@ func SetupRoutes(db *sql.DB) *mux.Router {
 	admin.HandleFunc("/songfess/delete", songfessController.DeleteSongfess).Methods("POST")
 	// Forum (admin only)
 	admin.HandleFunc("/forums", forumController.CreateForum).Methods("POST")
+	admin.HandleFunc("/forums/{id:[0-9]+}", forumController.UpdateForum).Methods("PUT")
+	admin.HandleFunc("/forums/{id:[0-9]+}", forumController.DeleteForum).Methods("DELETE")
+	admin.HandleFunc("/comments/{id:[0-9]+}", commentController.DeleteComment).Methods("DELETE")
 
 	return r
 }

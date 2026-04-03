@@ -169,3 +169,111 @@ func (fc *ForumController) GetForumByID(w http.ResponseWriter, r *http.Request) 
 	json.NewEncoder(w).Encode(forum)
 }
 
+// UpdateForum memperbarui data forum (mendukung partial update)
+func (fc *ForumController) UpdateForum(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	err := r.ParseMultipartForm(2 << 20) // 2MB
+	if err != nil {
+		http.Error(w, "File size is too large or invalid multipart form", http.StatusBadRequest)
+		return
+	}
+
+	// Fetch existing forum data first for partial update
+	var existingTitle, existingContent, imageURL string
+	err = fc.DB.QueryRow("SELECT title, content, COALESCE(image_url, '') FROM forums WHERE id = $1", id).Scan(&existingTitle, &existingContent, &imageURL)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			http.Error(w, "Forum not found", http.StatusNotFound)
+			return
+		}
+		http.Error(w, "Failed to fetch forum", http.StatusInternalServerError)
+		return
+	}
+
+	// Use existing values as fallback if not provided
+	title := strings.TrimSpace(r.FormValue("title"))
+	content := strings.TrimSpace(r.FormValue("content"))
+
+	if title == "" {
+		title = existingTitle
+	}
+	if content == "" {
+		content = existingContent
+	}
+
+	// Proses upload gambar (opsional)
+	file, header, err := r.FormFile("image")
+	if err == nil {
+		defer file.Close()
+
+		if header.Size > 2<<20 {
+			http.Error(w, "Ukuran gambar maksimal 2MB", http.StatusBadRequest)
+			return
+		}
+
+		ext := strings.ToLower(header.Filename)
+		if !strings.HasSuffix(ext, ".jpg") && !strings.HasSuffix(ext, ".jpeg") && !strings.HasSuffix(ext, ".png") {
+			http.Error(w, "Gambar harus berformat jpg/png", http.StatusBadRequest)
+			return
+		}
+
+		if config.CloudinaryClient != nil {
+			uploadParam, errUpload := config.CloudinaryClient.Upload.Upload(r.Context(), file, uploader.UploadParams{
+				Folder: "forums",
+			})
+			if errUpload != nil {
+				log.Printf("Error upload ke Cloudinary: %v", errUpload)
+				http.Error(w, "Failed to upload image", http.StatusInternalServerError)
+				return
+			}
+			imageURL = uploadParam.SecureURL
+		} else {
+			log.Println("Cloudinary Client is not initialized, skipping upload")
+		}
+	} else if err != http.ErrMissingFile {
+		http.Error(w, "Error saat membaca file", http.StatusBadRequest)
+		return
+	}
+
+	_, err = fc.DB.Exec("UPDATE forums SET title = $1, content = $2, image_url = NULLIF($3, '') WHERE id = $4", title, content, imageURL, id)
+	if err != nil {
+		log.Printf("Error updating forum: %v", err)
+		http.Error(w, "Failed to update forum", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"message": "Forum updated successfully"})
+}
+
+// DeleteForum menghapus data forum dan komentarnya
+func (fc *ForumController) DeleteForum(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	var exists bool
+	err := fc.DB.QueryRow("SELECT EXISTS(SELECT 1 FROM forums WHERE id=$1)", id).Scan(&exists)
+	if err != nil {
+		http.Error(w, "Failed to verify forum", http.StatusInternalServerError)
+		return
+	}
+	if !exists {
+		http.Error(w, "Forum not found", http.StatusNotFound)
+		return
+	}
+
+	_, _ = fc.DB.Exec("DELETE FROM comments WHERE forum_id = $1", id)
+
+	_, err = fc.DB.Exec("DELETE FROM forums WHERE id = $1", id)
+	if err != nil {
+		log.Printf("Error deleting forum: %v", err)
+		http.Error(w, "Failed to delete forum", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"message": "Forum deleted successfully"})
+}
