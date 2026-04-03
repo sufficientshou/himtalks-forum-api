@@ -22,7 +22,7 @@ func CORS(next http.Handler) http.Handler {
 			"http://localhost:5173",
 			"http://himtalks.japaneast.cloudapp.azure.com",
 			"https://himtalks.vercel.app",
-			"https://himtalks-admin.vercel.app",
+			"https://admin-himtalks.vercel.app",
 			"https://api.teknohive.me",
 		}
 

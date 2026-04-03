@@ -379,7 +379,7 @@ wss://api.teknohive.me/ws
 **Allowed Origins**:
 - `http://himtalks.japaneast.cloudapp.azure.com`
 - `https://himtalks.vercel.app`
-- `https://himtalks-admin.vercel.app`
+- `https://admin-himtalks.vercel.app`
 
 **Allowed Methods**: `GET`, `POST`, `PUT`, `DELETE`, `OPTIONS`
 **Allowed Headers**: `Content-Type`, `Authorization`
