@@ -11,7 +11,6 @@ import (
 
 	"himtalks-backend/ws"
 
-	"github.com/gorilla/handlers"
 	"github.com/joho/godotenv"
 )
 
@@ -106,15 +105,7 @@ func main() {
 	// Start WebSocket handler
 	go ws.HandleMessages()
 
-	// Middleware untuk menonaktifkan CORS
-	corsHandler := handlers.CORS(
-		handlers.AllowedOrigins([]string{"http://localhost:3000", "http://localhost:5173", "http://himtalks.japaneast.cloudapp.azure.com", "https://himtalks.vercel.app", "https://himtalks-admin.vercel.app"}), // Ganti * dengan domain FE
-		handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}),
-		handlers.AllowedHeaders([]string{"Content-Type", "Authorization"}),
-		handlers.AllowCredentials(), // Mengaktifkan penggunaan credentials (cookies/session)
-	)
-
-	// Start server dengan middleware CORS
+	// Start server (CORS sudah dihandle oleh middleware di routes.go)
 	log.Println("Server started on :8080")
-	log.Fatal(http.ListenAndServe(":8080", corsHandler(r)))
+	log.Fatal(http.ListenAndServe(":8080", r))
 }
