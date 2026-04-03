@@ -52,12 +52,14 @@ func CORS(next http.Handler) http.Handler {
 			}
 		}
 
-		// Untuk preflight (OPTIONS), harus tetap diproses meskipun tanpa Origin
+		// Untuk preflight (OPTIONS), kembalikan HTTP status 200 OK lalu langsung di-return
 		if r.Method == "OPTIONS" {
-			if originAllowed {
+			if origin != "" {
 				w.Header().Set("Access-Control-Allow-Origin", origin)
-				w.Header().Set("Access-Control-Allow-Credentials", "true")
+			} else {
+				w.Header().Set("Access-Control-Allow-Origin", "*")
 			}
+			w.Header().Set("Access-Control-Allow-Credentials", "true")
 			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 			w.Header().Set("Access-Control-Max-Age", "86400")

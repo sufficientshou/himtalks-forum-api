@@ -22,12 +22,12 @@ func SetupRoutes(db *sql.DB) *mux.Router {
 	r.Use(middleware.CORS)
 	// Endpoint message
 	messageController := &controllers.MessageController{DB: db}
-	r.HandleFunc("/message", messageController.SendMessage).Methods("POST")
+	r.HandleFunc("/message", messageController.SendMessage).Methods("POST", "OPTIONS")
 
 	// Endpoint songfess
 	songfessController := &controllers.SongfessController{DB: db}
 	// Tambahkan endpoint POST
-	r.HandleFunc("/songfess", songfessController.SendSongfess).Methods("POST")
+	r.HandleFunc("/songfess", songfessController.SendSongfess).Methods("POST", "OPTIONS")
 	// Ambil hanya data songfess 7 hari
 	r.HandleFunc("/songfess", func(w http.ResponseWriter, r *http.Request) {
 		days, _ := models.GetSongfessDays(db)
@@ -44,7 +44,7 @@ func SetupRoutes(db *sql.DB) *mux.Router {
 	adminController := &controllers.AdminController{}
 	r.HandleFunc("/auth/google/login", adminController.Login).Methods("GET")
 	r.HandleFunc("/auth/google/callback", adminController.Callback).Methods("GET")
-	r.HandleFunc("/auth/logout", adminController.Logout).Methods("POST")
+	r.HandleFunc("/auth/logout", adminController.Logout).Methods("POST", "OPTIONS")
 
 	// Protected routes
 	protected := r.PathPrefix("/api").Subrouter()
@@ -65,20 +65,20 @@ func SetupRoutes(db *sql.DB) *mux.Router {
 	r.HandleFunc("/forums", forumController.GetForumList).Methods("GET")
 	r.HandleFunc("/forums/{id:[0-9]+}", forumController.GetForumByID).Methods("GET")
 	r.HandleFunc("/forums/{id:[0-9]+}/comments", commentController.GetCommentsByForum).Methods("GET")
-	r.HandleFunc("/forums/{id:[0-9]+}/comments", commentController.CreateComment).Methods("POST")
+	r.HandleFunc("/forums/{id:[0-9]+}/comments", commentController.CreateComment).Methods("POST", "OPTIONS")
 
 	// Tambahan route admin
 	admin := protected.PathPrefix("/admin").Subrouter()
 	adminHandler := &controllers.AdminHandler{DB: db}
 	admin.Use(middleware.CheckIsAdmin(db)) // Cek di middleware
-	admin.HandleFunc("/addAdmin", adminHandler.AddAdmin).Methods("POST")
+	admin.HandleFunc("/addAdmin", adminHandler.AddAdmin).Methods("POST", "OPTIONS")
 	admin.HandleFunc("/list", adminHandler.GetAdminList).Methods("GET")
-	admin.HandleFunc("/removeAdmin", adminHandler.RemoveAdmin).Methods("POST")
-	admin.HandleFunc("/configSongfessDays", adminHandler.UpdateSongfessDays).Methods("POST")
+	admin.HandleFunc("/removeAdmin", adminHandler.RemoveAdmin).Methods("POST", "OPTIONS")
+	admin.HandleFunc("/configSongfessDays", adminHandler.UpdateSongfessDays).Methods("POST", "OPTIONS")
 	admin.HandleFunc("/configs", adminHandler.GetConfigs).Methods("GET")
-	admin.HandleFunc("/blacklist", adminHandler.AddBlacklistWord).Methods("POST")
+	admin.HandleFunc("/blacklist", adminHandler.AddBlacklistWord).Methods("POST", "OPTIONS")
 	admin.HandleFunc("/blacklist", adminHandler.GetBlacklistWords).Methods("GET")
-	admin.HandleFunc("/blacklist/remove", adminHandler.RemoveBlacklistWord).Methods("POST")
+	admin.HandleFunc("/blacklist/remove", adminHandler.RemoveBlacklistWord).Methods("POST", "OPTIONS")
 	// Endpoint untuk admin songfess dengan cutoff
 	admin.HandleFunc("/songfess", func(w http.ResponseWriter, r *http.Request) {
 		days, _ := models.GetSongfessDays(db)
@@ -87,13 +87,13 @@ func SetupRoutes(db *sql.DB) *mux.Router {
 	}).Methods("GET")
 	admin.HandleFunc("/songfessAll", songfessController.GetSongfessList).Methods("GET") // tanpa cutoff
 	admin.HandleFunc("/messages", messageController.GetMessageList).Methods("GET")
-	admin.HandleFunc("/message/delete", messageController.DeleteMessage).Methods("POST")
-	admin.HandleFunc("/songfess/delete", songfessController.DeleteSongfess).Methods("POST")
+	admin.HandleFunc("/message/delete", messageController.DeleteMessage).Methods("POST", "OPTIONS")
+	admin.HandleFunc("/songfess/delete", songfessController.DeleteSongfess).Methods("POST", "OPTIONS")
 	// Forum (admin only)
-	admin.HandleFunc("/forums", forumController.CreateForum).Methods("POST")
-	admin.HandleFunc("/forums/{id:[0-9]+}", forumController.UpdateForum).Methods("PUT")
-	admin.HandleFunc("/forums/{id:[0-9]+}", forumController.DeleteForum).Methods("DELETE")
-	admin.HandleFunc("/comments/{id:[0-9]+}", commentController.DeleteComment).Methods("DELETE")
+	admin.HandleFunc("/forums", forumController.CreateForum).Methods("POST", "OPTIONS")
+	admin.HandleFunc("/forums/{id:[0-9]+}", forumController.UpdateForum).Methods("PUT", "OPTIONS")
+	admin.HandleFunc("/forums/{id:[0-9]+}", forumController.DeleteForum).Methods("DELETE", "OPTIONS")
+	admin.HandleFunc("/comments/{id:[0-9]+}", commentController.DeleteComment).Methods("DELETE", "OPTIONS")
 
 	return r
 }
