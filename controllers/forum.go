@@ -10,7 +10,6 @@ import (
 
 	"himtalks-backend/config"
 	"himtalks-backend/models"
-	"himtalks-backend/utils"
 
 	"github.com/cloudinary/cloudinary-go/v2/api/uploader"
 	"github.com/gorilla/mux"
@@ -21,16 +20,8 @@ type ForumController struct {
 }
 
 // CreateForum membuat postingan forum (admin only via route middleware)
+// Admin bisa membuat forum kapan saja (tanpa batasan waktu)
 func (fc *ForumController) CreateForum(w http.ResponseWriter, r *http.Request) {
-	if !utils.IsMiniForumOpen() {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusForbidden)
-		json.NewEncoder(w).Encode(map[string]string{
-			"message": "Mini forum hanya bisa dibuat antara pukul 19:00–21:00 WIB",
-		})
-		return
-	}
-
 	// Parse multipart form dengan batas max 2MB di memory
 	err := r.ParseMultipartForm(2 << 20) // 2MB
 	if err != nil {
